@@ -1,56 +1,52 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 
 import { Icons } from "./icons";
 
 type OroRowProps = {
   value: number;
+
   onMinus: () => void;
   onPlus: () => void;
+
+  onLongMinus?: () => void;
+  onLongPlus?: () => void;
 };
 
 export default function OroRow({
   value,
   onMinus,
   onPlus,
+  onLongMinus,
+  onLongPlus,
 }: OroRowProps) {
   return (
     <View style={styles.statRow}>
-      <Text style={styles.statLabel}>
-        Oro
-      </Text>
+      <Text style={styles.statLabel}>Oro</Text>
 
+      {/* BOTÓN - */}
       <TouchableOpacity
         style={styles.adjBtn}
         onPress={onMinus}
+        onLongPress={onLongMinus}
+        delayLongPress={350}
       >
-        <Icons.minus
-          size={18}
-          color="#d4af37"
-        />
+        <Icons.minus size={18} color="#d4af37" />
       </TouchableOpacity>
 
+      {/* ORO */}
       <Text style={styles.oroValue}>
-        <Icons.coin
-          size={18}
-          color="#ffd038"
-        />{" "}
-        {value}
+        <Icons.coin size={18} color="#ffd038" /> {value}
       </Text>
 
+      {/* BOTÓN + */}
       <TouchableOpacity
         style={styles.adjBtn}
         onPress={onPlus}
+        onLongPress={onLongPlus}
+        delayLongPress={350}
       >
-        <Icons.plus
-          size={18}
-          color="#d4af37"
-        />
+        <Icons.plus size={18} color="#d4af37" />
       </TouchableOpacity>
     </View>
   );

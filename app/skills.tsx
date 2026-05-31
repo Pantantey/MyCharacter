@@ -33,7 +33,7 @@ export default function SkillsScreen() {
 
   const { mana, savedStats } = character;
 
-  const calculateDamage = (skill: Skill): number => {
+  const calculateDamage = (skill: Skill): number | string => {
     let baseStat = 1;
 
     if (skill.id.startsWith("f")) baseStat = savedStats.fuerza;
@@ -45,6 +45,13 @@ export default function SkillsScreen() {
     if (skill.id.startsWith("a")) baseStat = savedStats.agilidad;
 
     if (skill.id.startsWith("e")) baseStat = savedStats.encanto;
+
+    if (skill.id === "s2") {
+      return 0;
+    }
+    if (skill.id === "e3") {
+      return "?";
+    }
 
     return baseStat * skill.multiplier + savedStats.maestroHechizos;
   };
@@ -129,13 +136,30 @@ export default function SkillsScreen() {
                       <View style={styles.bottomRow}>
                         {/* DAÑO */}
                         <View style={styles.damageRow}>
-                          <Icons.sword
-                            size={12}
-                            color="#e67e22"
-                            weight="fill"
-                          />
+                          {skill.id === "i2" || skill.id === "e2" ? (
+                            <Icons.shield
+                              size={12}
+                              color="#ffffff"
+                              weight="fill"
+                            />
+                          ) : (
+                            <Icons.sword
+                              size={12}
+                              color="#ff3131"
+                              weight="fill"
+                            />
+                          )}
 
-                          <Text style={styles.damageText}>{damage}</Text>
+                          <Text
+                            style={[
+                              styles.damageText,
+                              (skill.id === "i2" || skill.id === "e2") && {
+                                color: "#ffffff",
+                              },
+                            ]}
+                          >
+                            {damage}
+                          </Text>
                         </View>
 
                         {/* MANA */}
@@ -175,9 +199,21 @@ export default function SkillsScreen() {
 
                 <View style={styles.modalStats}>
                   <View style={styles.modalStatRow}>
-                    <Icons.sword size={16} color="#e67e22" weight="fill" />
+                    {selectedSkill.id === "i2" || selectedSkill.id === "e2" ? (
+                      <Icons.shield size={16} color="#ffffff" weight="fill" />
+                    ) : (
+                      <Icons.sword size={16} color="#ff3131" weight="fill" />
+                    )}
 
-                    <Text style={styles.modalDamage}>
+                    <Text
+                      style={[
+                        styles.modalDamage,
+                        (selectedSkill.id === "i2" ||
+                          selectedSkill.id === "e2") && {
+                          color: "#ffffff",
+                        },
+                      ]}
+                    >
                       {calculateDamage(selectedSkill)}
                     </Text>
                   </View>
@@ -326,7 +362,7 @@ const styles = StyleSheet.create({
   },
 
   damageText: {
-    color: "#e67e22",
+    color: "#ff3131",
     fontSize: 11,
     fontWeight: "bold",
   },
@@ -388,7 +424,7 @@ const styles = StyleSheet.create({
   },
 
   modalDamage: {
-    color: "#e67e22",
+    color: "#ff3131",
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -406,7 +442,7 @@ const styles = StyleSheet.create({
 
   cancelBtn: {
     flex: 1,
-    backgroundColor: "#222",
+    backgroundColor: "#333",
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: "center",
@@ -421,16 +457,16 @@ const styles = StyleSheet.create({
   },
 
   useBtnDisabled: {
-    backgroundColor: "#333",
+    backgroundColor: "#222",
   },
 
   cancelText: {
-    color: "#aaa",
+    color: "#f0f0f0",
     fontWeight: "bold",
   },
 
   useText: {
-    color: "#fff",
+    color: "#ffffff",
     fontWeight: "bold",
   },
 

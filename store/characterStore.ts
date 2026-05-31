@@ -1,9 +1,9 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_HP = 50;
-const BASE_MANA = 100;
+const BASE_HP = 30;
+const BASE_MANA = 50;
 
 // ─────────────────────────────────────────────
 // TIPOS
@@ -53,7 +53,7 @@ interface CharacterStore {
   pendingStats: CharacterStats | null;
   pendingAvailable: number;
 
-  // acciones personajes
+  // personajes
   createCharacter: () => void;
   deleteCharacter: (id: string) => boolean;
   selectCharacter: (id: string) => void;
@@ -70,8 +70,16 @@ interface CharacterStore {
   adjustMana: (delta: number) => void;
   adjustOro: (delta: number) => void;
 
+  setVida: (value: number) => void;
+  setMana: (value: number) => void;
+  setOro: (value: number) => void;
+  setExp: (value: number) => void;
+
   addExp: () => void;
   removeExp: () => void;
+
+  addExpAmount: (amount: number) => void;
+  removeExpAmount: (amount: number) => void;
 
   useSkill: (manaCost: number) => boolean;
 
@@ -79,10 +87,7 @@ interface CharacterStore {
   openStats: () => void;
   closeStats: () => void;
 
-  adjustPendingStat: (
-    stat: StatKey,
-    delta: number
-  ) => void;
+  adjustPendingStat: (stat: StatKey, delta: number) => void;
 
   saveStats: () => void;
 }
@@ -91,9 +96,7 @@ interface CharacterStore {
 // FUNCIONES
 // ─────────────────────────────────────────────
 
-export const getExpNeeded = (
-  level: number
-): number => {
+export const getExpNeeded = (level: number): number => {
   if (level === 1) return 3;
   if (level === 2) return 6;
   if (level === 3) return 10;
@@ -103,14 +106,11 @@ export const getExpNeeded = (
   return 25 + (level - 5) * 15;
 };
 
-export const calcVidaMax = (
-  vidaStat: number
-): number => BASE_HP + (vidaStat - 1) * 5;
+export const calcVidaMax = (vidaStat: number): number =>
+  BASE_HP + (vidaStat - 1) * 3;
 
-export const calcManaMax = (
-  intelectoStat: number
-): number =>
-  BASE_MANA + (intelectoStat - 1) * 10;
+export const calcManaMax = (intelectoStat: number): number =>
+  BASE_MANA + (intelectoStat - 1) * 5;
 
 // ─────────────────────────────────────────────
 // STATS INICIALES
@@ -136,7 +136,7 @@ const createBaseCharacter = (): Character => {
   return {
     id,
 
-    name: 'Nuevo Héroe',
+    name: "Nuevo Héroe",
     image: null,
 
     level: 1,
@@ -156,7 +156,7 @@ const createBaseCharacter = (): Character => {
       ...INITIAL_STATS,
     },
 
-    availablePoints: 10,
+    availablePoints: 7,
   };
 };
 
@@ -164,202 +164,258 @@ const createBaseCharacter = (): Character => {
 // STORE
 // ─────────────────────────────────────────────
 
-export const useCharacterStore =
-  create<CharacterStore>()(
-    persist(
-      (set, get) => ({
-        characters: [createBaseCharacter()],
+export const useCharacterStore = create<CharacterStore>()(
+  persist(
+    (set, get) => ({
+      characters: [createBaseCharacter()],
 
-        selectedCharacterId: '',
+      selectedCharacterId: "",
 
-        pendingStats: null,
-        pendingAvailable: 0,
+      pendingStats: null,
+      pendingAvailable: 0,
 
-        get currentCharacter() {
-          const s = get();
+      get currentCharacter() {
+        const s = get();
 
-          return (
-            s.characters.find(
-              (c) =>
-                c.id === s.selectedCharacterId
-            ) || s.characters[0]
-          );
-        },
+        return (
+          s.characters.find((c) => c.id === s.selectedCharacterId) ||
+          s.characters[0]
+        );
+      },
 
-        // ─────────────────────────
-        // PERSONAJES
-        // ─────────────────────────
+      // ─────────────────────────
+      // PERSONAJES
+      // ─────────────────────────
 
-        createCharacter: () => {
-          const newCharacter =
-            createBaseCharacter();
+      createCharacter: () => {
+        const newCharacter = createBaseCharacter();
 
-          set((s) => ({
-            characters: [
-              ...s.characters,
-              newCharacter,
-            ],
+        set((s) => ({
+          characters: [newCharacter, ...s.characters],
 
-            selectedCharacterId:
-              newCharacter.id,
-          }));
-        },
+          selectedCharacterId: newCharacter.id,
+        }));
+      },
 
-        deleteCharacter: (id) => {
-          const s = get();
+      deleteCharacter: (id) => {
+        const s = get();
 
-          if (s.characters.length <= 1) {
-            return false;
-          }
+        if (s.characters.length <= 1) {
+          return false;
+        }
 
-          const filtered = s.characters.filter(
-            (c) => c.id !== id
-          );
+        const filtered = s.characters.filter((c) => c.id !== id);
 
-          let selectedId =
-            s.selectedCharacterId;
+        let selectedId = s.selectedCharacterId;
 
-          if (selectedId === id) {
-            selectedId = filtered[0].id;
-          }
+        if (selectedId === id) {
+          selectedId = filtered[0].id;
+        }
 
-          set({
-            characters: filtered,
-            selectedCharacterId:
-              selectedId,
-          });
+        set({
+          characters: filtered,
+          selectedCharacterId: selectedId,
+        });
 
-          return true;
-        },
+        return true;
+      },
 
-        selectCharacter: (id) =>
-          set({
-            selectedCharacterId: id,
-          }),
+      selectCharacter: (id) =>
+        set({
+          selectedCharacterId: id,
+        }),
 
-        // ─────────────────────────
-        // IDENTIDAD
-        // ─────────────────────────
+      // ─────────────────────────
+      // IDENTIDAD
+      // ─────────────────────────
 
-        setName: (name) =>
-          set((s) => ({
-            characters: s.characters.map(
-              (c) =>
-                c.id ===
-                s.selectedCharacterId
-                  ? { ...c, name }
-                  : c
-            ),
-          })),
+      setName: (name) =>
+        set((s) => ({
+          characters: s.characters.map((c) =>
+            c.id === s.selectedCharacterId ? { ...c, name } : c,
+          ),
+        })),
 
-        setImage: (image) =>
-          set((s) => ({
-            characters: s.characters.map(
-              (c) =>
-                c.id ===
-                s.selectedCharacterId
-                  ? { ...c, image }
-                  : c
-            ),
-          })),
+      setImage: (image) =>
+        set((s) => ({
+          characters: s.characters.map((c) =>
+            c.id === s.selectedCharacterId ? { ...c, image } : c,
+          ),
+        })),
 
-        // ─────────────────────────
-        // VIDA / MANA / ORO
-        // ─────────────────────────
+      // ─────────────────────────
+      // VIDA
+      // ─────────────────────────
 
-        adjustVida: (delta) =>
-          set((s) => ({
-            characters: s.characters.map(
-              (c) => {
-                if (
-                  c.id !==
-                  s.selectedCharacterId
-                ) {
-                  return c;
-                }
-
-                return {
-                  ...c,
-                  vida: Math.max(
-                    0,
-                    Math.min(
-                      c.vidaMax,
-                      c.vida + delta
-                    )
-                  ),
-                };
-              }
-            ),
-          })),
-
-        adjustMana: (delta) =>
-          set((s) => ({
-            characters: s.characters.map(
-              (c) => {
-                if (
-                  c.id !==
-                  s.selectedCharacterId
-                ) {
-                  return c;
-                }
-
-                return {
-                  ...c,
-                  mana: Math.max(
-                    0,
-                    Math.min(
-                      c.manaMax,
-                      c.mana + delta
-                    )
-                  ),
-                };
-              }
-            ),
-          })),
-
-        adjustOro: (delta) =>
-          set((s) => ({
-            characters: s.characters.map(
-              (c) => {
-                if (
-                  c.id !==
-                  s.selectedCharacterId
-                ) {
-                  return c;
-                }
-
-                return {
-                  ...c,
-                  oro: Math.max(
-                    0,
-                    c.oro + delta
-                  ),
-                };
-              }
-            ),
-          })),
-
-        // ─────────────────────────
-        // EXP
-        // ─────────────────────────
-
-        addExp: () =>
+      adjustVida: (delta) =>
         set((s) => ({
           characters: s.characters.map((c) => {
             if (c.id !== s.selectedCharacterId) {
               return c;
             }
 
-            let newExp = c.exp + 1;
+            return {
+              ...c,
+              vida: Math.max(0, Math.min(c.vidaMax, c.vida + delta)),
+            };
+          }),
+        })),
+
+      setVida: (value) =>
+        set((s) => ({
+          characters: s.characters.map((c) => {
+            if (c.id !== s.selectedCharacterId) {
+              return c;
+            }
+
+            return {
+              ...c,
+              vida: Math.max(0, Math.min(c.vidaMax, value)),
+            };
+          }),
+        })),
+
+      // ─────────────────────────
+      // MANA
+      // ─────────────────────────
+
+      adjustMana: (delta) =>
+        set((s) => ({
+          characters: s.characters.map((c) => {
+            if (c.id !== s.selectedCharacterId) {
+              return c;
+            }
+
+            return {
+              ...c,
+              mana: Math.max(0, Math.min(c.manaMax, c.mana + delta)),
+            };
+          }),
+        })),
+
+      setMana: (value) =>
+        set((s) => ({
+          characters: s.characters.map((c) => {
+            if (c.id !== s.selectedCharacterId) {
+              return c;
+            }
+
+            return {
+              ...c,
+              mana: Math.max(0, Math.min(c.manaMax, value)),
+            };
+          }),
+        })),
+
+      // ─────────────────────────
+      // ORO
+      // ─────────────────────────
+
+      adjustOro: (delta) =>
+        set((s) => ({
+          characters: s.characters.map((c) => {
+            if (c.id !== s.selectedCharacterId) {
+              return c;
+            }
+
+            return {
+              ...c,
+              oro: Math.max(0, c.oro + delta),
+            };
+          }),
+        })),
+
+      setOro: (value) =>
+        set((s) => ({
+          characters: s.characters.map((c) => {
+            if (c.id !== s.selectedCharacterId) {
+              return c;
+            }
+
+            return {
+              ...c,
+              oro: Math.max(0, value),
+            };
+          }),
+        })),
+
+      setExp: (value) =>
+        set((s) => ({
+          characters: s.characters.map((c) => {
+            if (c.id !== s.selectedCharacterId) {
+              return c;
+            }
+
+            let newExp = Math.max(0, value);
+
             let level = c.level;
+
             let availablePoints = c.availablePoints;
 
             let leveledUp = false;
 
             while (newExp >= getExpNeeded(level)) {
               newExp -= getExpNeeded(level);
+
               level++;
+
               availablePoints += 3;
+
+              leveledUp = true;
+            }
+
+            return {
+              ...c,
+
+              exp: newExp,
+
+              level,
+
+              expNeeded: getExpNeeded(level),
+
+              availablePoints,
+
+              vida: leveledUp ? c.vidaMax : c.vida,
+
+              mana: leveledUp ? c.manaMax : c.mana,
+            };
+          }),
+        })),
+
+      // ─────────────────────────
+      // EXPERIENCIA
+      // ─────────────────────────
+
+      addExp: () => {
+        get().addExpAmount(1);
+      },
+
+      removeExp: () => {
+        get().removeExpAmount(1);
+      },
+
+      addExpAmount: (amount) =>
+        set((s) => ({
+          characters: s.characters.map((c) => {
+            if (c.id !== s.selectedCharacterId) {
+              return c;
+            }
+
+            let newExp = c.exp + amount;
+
+            let level = c.level;
+
+            let availablePoints = c.availablePoints;
+
+            let leveledUp = false;
+
+            while (newExp >= getExpNeeded(level)) {
+              newExp -= getExpNeeded(level);
+
+              level++;
+
+              availablePoints += 3;
+
               leveledUp = true;
             }
 
@@ -368,230 +424,191 @@ export const useCharacterStore =
 
               exp: newExp,
               level,
+
               expNeeded: getExpNeeded(level),
+
               availablePoints,
 
-              // 👇 SOLO si sube de nivel
               vida: leveledUp ? c.vidaMax : c.vida,
+
               mana: leveledUp ? c.manaMax : c.mana,
             };
           }),
         })),
 
-        removeExp: () =>
-          set((s) => ({
-            characters: s.characters.map(
-              (c) =>
-                c.id ===
-                s.selectedCharacterId
-                  ? {
-                      ...c,
-                      exp: Math.max(
-                        0,
-                        c.exp - 1
-                      ),
-                    }
-                  : c
-            ),
-          })),
+      removeExpAmount: (amount) =>
+        set((s) => ({
+          characters: s.characters.map((c) => {
+            if (c.id !== s.selectedCharacterId) {
+              return c;
+            }
 
-        // ─────────────────────────
-        // HABILIDADES
-        // ─────────────────────────
+            return {
+              ...c,
+              exp: Math.max(0, c.exp - amount),
+            };
+          }),
+        })),
 
-        useSkill: (manaCost) => {
-          const s = get();
+      // ─────────────────────────
+      // HABILIDADES
+      // ─────────────────────────
 
-          const current =
-            s.currentCharacter;
+      useSkill: (manaCost) => {
+        const s = get();
 
-          if (!current) {
-            return false;
-          }
+        const current = s.currentCharacter;
 
-          if (current.mana < manaCost) {
-            return false;
-          }
+        if (!current) {
+          return false;
+        }
 
-          set((state) => ({
-            characters:
-              state.characters.map((c) =>
-                c.id ===
-                state.selectedCharacterId
-                  ? {
-                      ...c,
-                      mana:
-                        c.mana - manaCost,
-                    }
-                  : c
-              ),
-          }));
+        if (current.mana < manaCost) {
+          return false;
+        }
 
-          return true;
-        },
+        set((state) => ({
+          characters: state.characters.map((c) =>
+            c.id === state.selectedCharacterId
+              ? {
+                  ...c,
+                  mana: c.mana - manaCost,
+                }
+              : c,
+          ),
+        }));
 
-        // ─────────────────────────
-        // STATS
-        // ─────────────────────────
+        return true;
+      },
 
-        openStats: () => {
-            const s = get();
+      // ─────────────────────────
+      // STATS
+      // ─────────────────────────
 
-            const current =
-                s.characters.find(
-                (c) => c.id === s.selectedCharacterId
-                ) || s.characters[0];
+      openStats: () => {
+        const s = get();
 
-            if (!current) return;
+        const current =
+          s.characters.find((c) => c.id === s.selectedCharacterId) ||
+          s.characters[0];
 
-            set({
-                pendingStats: {
-                ...current.savedStats,
-                },
+        if (!current) return;
 
-                pendingAvailable:
-                current.availablePoints,
-            });
-        },
+        set({
+          pendingStats: {
+            ...current.savedStats,
+          },
 
-        closeStats: () =>
+          pendingAvailable: current.availablePoints,
+        });
+      },
+
+      closeStats: () =>
+        set({
+          pendingStats: null,
+          pendingAvailable: 0,
+        }),
+
+      adjustPendingStat: (stat, delta) => {
+        const s = get();
+
+        if (!s.pendingStats) return;
+
+        const curr = s.pendingStats[stat];
+
+        const current = s.currentCharacter;
+
+        if (!current) return;
+
+        const saved = current.savedStats[stat];
+
+        if (delta > 0) {
+          if (s.pendingAvailable <= 0) return;
+
           set({
-            pendingStats: null,
-            pendingAvailable: 0,
+            pendingStats: {
+              ...s.pendingStats,
+              [stat]: curr + 1,
+            },
+
+            pendingAvailable: s.pendingAvailable - 1,
+          });
+        } else {
+          if (curr <= saved) return;
+
+          set({
+            pendingStats: {
+              ...s.pendingStats,
+              [stat]: curr - 1,
+            },
+
+            pendingAvailable: s.pendingAvailable + 1,
+          });
+        }
+      },
+
+      saveStats: () => {
+        const s = get();
+
+        const current = s.currentCharacter;
+
+        if (!s.pendingStats || !current) {
+          return;
+        }
+
+        const newVidaMax = calcVidaMax(s.pendingStats.vida);
+
+        const newManaMax = calcManaMax(s.pendingStats.intelecto);
+
+        set((state) => ({
+          characters: state.characters.map((c) => {
+            if (c.id !== state.selectedCharacterId) {
+              return c;
+            }
+
+            const oldVidaMax = c.vidaMax;
+
+            const vidaDiff = newVidaMax - oldVidaMax;
+
+            const oldManaMax = c.manaMax;
+
+            const manaDiff = newManaMax - oldManaMax;
+
+            return {
+              ...c,
+
+              savedStats: {
+                ...s.pendingStats!,
+              },
+
+              availablePoints: s.pendingAvailable,
+
+              vidaMax: newVidaMax,
+              manaMax: newManaMax,
+
+              vida: Math.min(c.vida + vidaDiff, newVidaMax),
+
+              mana: Math.min(c.mana + manaDiff, newManaMax),
+            };
           }),
 
-        adjustPendingStat: (
-          stat,
-          delta
-        ) => {
-          const s = get();
+          pendingStats: null,
+          pendingAvailable: 0,
+        }));
+      },
+    }),
+    {
+      name: "rpg-multi-character",
 
-          if (!s.pendingStats) return;
+      storage: createJSONStorage(() => AsyncStorage),
 
-          const curr =
-            s.pendingStats[stat];
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
 
-          const current =
-            s.currentCharacter;
-
-          if (!current) return;
-
-          const saved =
-            current.savedStats[stat];
-
-          if (delta > 0) {
-            if (s.pendingAvailable <= 0)
-              return;
-
-            set({
-              pendingStats: {
-                ...s.pendingStats,
-                [stat]: curr + 1,
-              },
-
-              pendingAvailable:
-                s.pendingAvailable - 1,
-            });
-          } else {
-            if (curr <= saved) return;
-
-            set({
-              pendingStats: {
-                ...s.pendingStats,
-                [stat]: curr - 1,
-              },
-
-              pendingAvailable:
-                s.pendingAvailable + 1,
-            });
-          }
-        },
-
-        saveStats: () => {
-          const s = get();
-
-          const current =
-            s.currentCharacter;
-
-          if (
-            !s.pendingStats ||
-            !current
-          ) {
-            return;
-          }
-
-          const newVidaMax =
-            calcVidaMax(
-              s.pendingStats.vida
-            );
-
-          const newManaMax =
-            calcManaMax(
-              s.pendingStats.intelecto
-            );
-
-          set((state) => ({
-            characters:
-              state.characters.map((c) => {
-                if (
-                  c.id !==
-                  state.selectedCharacterId
-                ) {
-                  return c;
-                }
-
-                const oldVidaMax = c.vidaMax;
-                const vidaDiff = newVidaMax - oldVidaMax;
-                const oldManaMax = c.manaMax;
-                const manaDiff = newManaMax - oldManaMax;
-
-                return {
-                  ...c,
-
-                  savedStats: {
-                    ...s.pendingStats!,
-                  },
-
-                  availablePoints:
-                    s.pendingAvailable,
-
-                  vidaMax: newVidaMax,
-                  manaMax: newManaMax,
-
-                  vida: Math.min(
-                    c.vida + vidaDiff,
-                    newVidaMax
-                  ),
-
-                  mana: Math.min(
-                    c.mana + manaDiff,
-                    newManaMax
-                  ),
-                };
-              }),
-
-            pendingStats: null,
-            pendingAvailable: 0,
-          }));
-        },
-      }),
-      {
-        name: 'rpg-multi-character',
-        storage: createJSONStorage(
-          () => AsyncStorage
-        ),
-
-        onRehydrateStorage: () => (state) => {
-          if (!state) return;
-
-          if (
-            !state.selectedCharacterId &&
-            state.characters.length > 0
-          ) {
-            state.selectedCharacterId =
-              state.characters[0].id;
-          }
-        },
-      }
-    )
-  );
+        if (!state.selectedCharacterId && state.characters.length > 0) {
+          state.selectedCharacterId = state.characters[0].id;
+        }
+      },
+    },
+  ),
+);

@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
 
   createBtn: {
     position: "absolute",
-    bottom: 20,
+    bottom: 45,
     left: 20,
     right: 20,
     backgroundColor: "#1e7e34",

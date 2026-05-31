@@ -25,14 +25,14 @@ const STAT_CONFIG: Record<
 > = {
   vida: {
     label: "Vida",
-    desc: "Cada punto +5 HP máximo",
+    desc: "Cada punto +3 HP máximo",
     min: 1,
     icon: <Icons.heart size={16} color="#d61f1f" weight="fill" />,
   },
 
   intelecto: {
     label: "Intelecto",
-    desc: "Cada punto +10 Mana máximo",
+    desc: "Cada punto +5 Mana máximo",
     min: 1,
     icon: <Icons.magic size={16} color="#274cf1" weight="fill" />,
   },

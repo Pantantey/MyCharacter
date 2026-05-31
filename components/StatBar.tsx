@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 
 import { Icons } from "./icons";
 
@@ -13,8 +8,12 @@ type StatBarProps = {
   current: number;
   max: number;
   color: string;
+
   onMinus: () => void;
   onPlus: () => void;
+
+  onLongMinus?: () => void;
+  onLongPlus?: () => void;
 };
 
 export default function StatBar({
@@ -24,28 +23,26 @@ export default function StatBar({
   color,
   onMinus,
   onPlus,
+  onLongMinus,
+  onLongPlus,
 }: StatBarProps) {
-  const pct =
-    max > 0
-      ? Math.min((current / max) * 100, 100)
-      : 0;
+  const pct = max > 0 ? Math.min((current / max) * 100, 100) : 0;
 
   return (
     <View style={styles.statRow}>
-      <Text style={styles.statLabel}>
-        {label}
-      </Text>
+      <Text style={styles.statLabel}>{label}</Text>
 
+      {/* BOTÓN - */}
       <TouchableOpacity
         style={styles.adjBtn}
         onPress={onMinus}
+        onLongPress={onLongMinus}
+        delayLongPress={350}
       >
-        <Icons.minus
-          size={18}
-          color="#d4af37"
-        />
+        <Icons.minus size={18} color="#d4af37" />
       </TouchableOpacity>
 
+      {/* BARRA */}
       <View style={styles.barWrap}>
         <View
           style={[
@@ -62,14 +59,14 @@ export default function StatBar({
         </Text>
       </View>
 
+      {/* BOTÓN + */}
       <TouchableOpacity
         style={styles.adjBtn}
         onPress={onPlus}
+        onLongPress={onLongPlus}
+        delayLongPress={350}
       >
-        <Icons.plus
-          size={18}
-          color="#d4af37"
-        />
+        <Icons.plus size={18} color="#d4af37" />
       </TouchableOpacity>
     </View>
   );
